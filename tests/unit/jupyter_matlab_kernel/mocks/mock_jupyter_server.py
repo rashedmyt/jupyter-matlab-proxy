@@ -9,7 +9,6 @@ import os
 
 import httpx
 import pytest
-import requests
 from jupyter_server import serverapp
 
 PID = "server 1"
