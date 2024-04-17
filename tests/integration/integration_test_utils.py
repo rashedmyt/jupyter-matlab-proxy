@@ -1,4 +1,4 @@
-# Copyright 2023 The MathWorks, Inc.
+# Copyright 2023-2024 The MathWorks, Inc.
 # Utility functions for integration testing of jupyter-matlab-proxy
 
 import asyncio
