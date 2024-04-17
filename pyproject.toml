@@ -47,7 +47,7 @@ dependencies = [
     "simpervisor>=1.0.0",
     "matlab-proxy>=0.10.0",
     "psutil",
-    "requests",
+    "httpx",
     "ipykernel"
 ]
 
@@ -55,7 +55,7 @@ dependencies = [
 Homepage = "https://github.com/mathworks/jupyter-matlab-proxy"
 
 [project.optional-dependencies]
-dev = ["black", "pytest", "pytest-cov", "jupyter-kernel-test", "pytest-playwright"]
+dev = ["black", "pytest", "pytest-cov", "jupyter-kernel-test", "pytest-playwright", "pytest-httpx"]
 
 [project.entry-points.jupyter_serverproxy_servers]
 matlab = "jupyter_matlab_proxy:setup_matlab"
@@ -105,6 +105,7 @@ npm = ["jlpm"]
 [tool.pytest.ini_options]
 minversion = "6.0"
 addopts = "-ra -q"
+asyncio_mode = "auto"
 testpaths = ["tests"]
 filterwarnings = ["ignore::DeprecationWarning", "ignore::RuntimeWarning"]
 

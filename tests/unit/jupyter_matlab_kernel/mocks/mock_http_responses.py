@@ -1,11 +1,10 @@
-# Copyright 2023 The MathWorks, Inc.
+# Copyright 2023-2024 The MathWorks, Inc.
 """Mock matlab-proxy HTTP Responses."""
 
-import requests
-from requests.exceptions import HTTPError
+import httpx
 
 
-class MockUnauthorisedRequestResponse:
+class MockUnauthorisedRequestResponse(httpx.Response):
     """
     Emulates an unauthorized request to matlab-proxy.
 
@@ -14,14 +13,16 @@ class MockUnauthorisedRequestResponse:
     """
 
     exception_msg = "Mock exception thrown due to unauthorized request status."
-    status_code = requests.codes.unauthorized
+
+    def __init__(self):
+        super().__init__(status_code=httpx.codes.UNAUTHORIZED)
 
     def raise_for_status(self):
         """Raise a HTTPError with unauthorised request message."""
-        raise HTTPError(self.exception_msg)
+        raise httpx.HTTPError(self.exception_msg)
 
 
-class MockMatlabProxyStatusResponse:
+class MockMatlabProxyStatusResponse(httpx.Response):
     """A mock of a matlab-proxy status response."""
 
     def __init__(self, lic_type, matlab_status, has_error) -> None:
@@ -32,12 +33,10 @@ class MockMatlabProxyStatusResponse:
             matlab_status (string): indicates the MATLAB status, i.e. is it "starting", "running" etc.
             has_error (bool): indicates if there is an error with MATLAB
         """
-
+        super().__init__(status_code=httpx.codes.OK)
         self.licensed = self.process_license_type(lic_type)
         self.matlab_status = matlab_status
         self.error = MockError("An example error") if has_error else None
-
-    status_code = requests.codes.ok
 
     @staticmethod
     def handle_entitled_mhlm():
@@ -99,10 +98,11 @@ class MockMatlabProxyStatusResponse:
         }
 
 
-class MockSimpleOkResponse:
+class MockSimpleOkResponse(httpx.Response):
     """A mock of a successful http request that returns empty json."""
 
-    status_code = requests.codes.ok
+    def __init__(self):
+        super().__init__(status_code=httpx.codes.OK)
 
     @staticmethod
     def json():
@@ -110,7 +110,7 @@ class MockSimpleOkResponse:
         return {}
 
 
-class MockSimpleBadResponse:
+class MockSimpleBadResponse(httpx.Response):
     """A mock of a bad https request."""
 
     def __init__(self, error_message: str) -> None:
@@ -119,13 +119,12 @@ class MockSimpleBadResponse:
         Args:
             error_message (str): the mock will raise a HTTPError with this error message.
         """
+        super().__init__(status_code=httpx.codes.BAD_REQUEST)
         self.error_message = error_message
-
-    status_code = requests.codes.bad
 
     def raise_for_status(self):
         """Raise a HTTPError with custom error message."""
-        raise HTTPError(self.error_message)
+        raise httpx.HTTPError(self.error_message)
 
 
 class MockError(Exception):
