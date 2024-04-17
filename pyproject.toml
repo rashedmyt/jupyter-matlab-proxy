@@ -55,7 +55,7 @@ dependencies = [
 Homepage = "https://github.com/mathworks/jupyter-matlab-proxy"
 
 [project.optional-dependencies]
-dev = ["black", "pytest", "pytest-cov", "jupyter-kernel-test", "pytest-playwright", "pytest-httpx"]
+dev = ["black", "pytest", "pytest-cov", "jupyter-kernel-test", "pytest-playwright", "pytest-httpx", "pytest-asyncio"]
 
 [project.entry-points.jupyter_serverproxy_servers]
 matlab = "jupyter_matlab_proxy:setup_matlab"
