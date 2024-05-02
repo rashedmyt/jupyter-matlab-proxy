@@ -4,7 +4,7 @@
 import json
 import pathlib
 
-import httpx
+import aiohttp
 from matlab_proxy.util.mwi.embedded_connector.helpers import (
     get_data_to_eval_mcode,
     get_data_to_feval_mcode,
@@ -31,12 +31,19 @@ class MatlabProxyCommunicationManager:
         self.url = url
         self.headers = headers
         self.logger = logger
-        self._httpx_client = httpx.AsyncClient(
-            headers=headers, verify=False, follow_redirects=True, base_url=url
+        # self._httpx_client = httpx.AsyncClient(
+        #     headers=headers, verify=False, follow_redirects=True, base_url=url
+        # )
+
+    async def connect(self):
+        self._http_client = aiohttp.ClientSession(
+            connector=aiohttp.TCPConnector(ssl=False),
+            headers=self.headers,
+            trust_env=True,
         )
 
     async def disconnect(self):
-        await self._httpx_client.aclose()
+        await self._http_client.close()
 
     async def fetch_matlab_proxy_status(self):
         """
@@ -54,10 +61,10 @@ class MatlabProxyCommunicationManager:
             HTTPError: Occurs when connection to matlab-proxy cannot be established.
         """
         self.logger.debug("Fetching matlab-proxy status")
-        resp = await self._httpx_client.get("/get_status")
-        self.logger.debug(f"Received status code: {resp.status_code}")
-        if resp.status_code == httpx.codes.OK:
-            data = resp.json()
+        resp = await self._http_client.get(self.url + "/get_status")
+        self.logger.debug(f"Received status code: {resp.status}")
+        if resp.status == 200:
+            data = await resp.json()
             self.logger.debug(f"Response:\n{data}")
             is_matlab_licensed = check_licensing_status(data)
 
@@ -146,12 +153,12 @@ class MatlabProxyCommunicationManager:
         self.logger.debug(f"Request URL: {url}")
         self.logger.debug(f"Request Headers:\n{self.headers}")
         self.logger.debug(f"Request Body:\n{req_body}")
-        resp = await self._httpx_client.post(
+        resp = await self._http_client.post(
             url,
             json=req_body,
         )
-        self.logger.debug(f"Received status code: {resp.status_code}")
-        if resp.status_code != httpx.codes.OK:
+        self.logger.debug(f"Received status code: {resp.status}")
+        if resp.status != 200:
             self.logger.error("Error occurred during communication with matlab-proxy")
             resp.raise_for_status()
 
@@ -175,13 +182,13 @@ class MatlabProxyCommunicationManager:
         self.logger.debug(f"Request Headers:\n{self.headers}")
         self.logger.debug(f"Request Body:\n{req_body}")
 
-        resp = await self._httpx_client.post(
+        resp = await self._http_client.post(
             url,
             json=req_body,
         )
-        self.logger.debug(f"Received status code: {resp.status_code}")
-        if resp.status_code == httpx.codes.OK:
-            response_data = resp.json()
+        self.logger.debug(f"Received status code: {resp.status}")
+        if resp.status == 200:
+            response_data = await resp.json()
             self.logger.debug(f"Response:\n{response_data}")
             try:
                 feval_response = response_data["messages"]["FEvalResponse"][1]
@@ -231,13 +238,13 @@ class MatlabProxyCommunicationManager:
         self.logger.debug(f"Request URL: {url}")
         self.logger.debug(f"Request Headers:\n{self.headers}")
         self.logger.debug(f"Request Body:\n{req_body}")
-        resp = await self._httpx_client.post(
+        resp = await self._http_client.post(
             url,
             json=req_body,
         )
-        self.logger.debug(f"Received status code: {resp.status_code}")
-        if resp.status_code == httpx.codes.OK:
-            response_data = resp.json()
+        self.logger.debug(f"Received status code: {resp.status}")
+        if resp.status == 200:
+            response_data = await resp.json()
             self.logger.debug(f"Response:\n{response_data}")
             try:
                 eval_response = response_data["messages"]["EvalResponse"][0]

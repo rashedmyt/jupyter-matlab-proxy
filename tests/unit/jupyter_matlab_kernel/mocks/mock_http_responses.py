@@ -1,10 +1,12 @@
 # Copyright 2023-2024 The MathWorks, Inc.
 """Mock matlab-proxy HTTP Responses."""
 
-import httpx
+import http
+
+import aiohttp.client_exceptions
 
 
-class MockUnauthorisedRequestResponse(httpx.Response):
+class MockUnauthorisedRequestResponse:
     """
     Emulates an unauthorized request to matlab-proxy.
 
@@ -13,16 +15,14 @@ class MockUnauthorisedRequestResponse(httpx.Response):
     """
 
     exception_msg = "Mock exception thrown due to unauthorized request status."
-
-    def __init__(self):
-        super().__init__(status_code=httpx.codes.UNAUTHORIZED)
+    status = http.HTTPStatus.UNAUTHORIZED
 
     def raise_for_status(self):
         """Raise a HTTPError with unauthorised request message."""
-        raise httpx.HTTPError(self.exception_msg)
+        raise aiohttp.client_exceptions.ClientError(self.exception_msg)
 
 
-class MockMatlabProxyStatusResponse(httpx.Response):
+class MockMatlabProxyStatusResponse:
     """A mock of a matlab-proxy status response."""
 
     def __init__(self, lic_type, matlab_status, has_error) -> None:
@@ -33,10 +33,11 @@ class MockMatlabProxyStatusResponse(httpx.Response):
             matlab_status (string): indicates the MATLAB status, i.e. is it "starting", "running" etc.
             has_error (bool): indicates if there is an error with MATLAB
         """
-        super().__init__(status_code=httpx.codes.OK)
         self.licensed = self.process_license_type(lic_type)
         self.matlab_status = matlab_status
         self.error = MockError("An example error") if has_error else None
+
+    status = http.HTTPStatus.OK
 
     @staticmethod
     def handle_entitled_mhlm():
@@ -89,7 +90,7 @@ class MockMatlabProxyStatusResponse(httpx.Response):
         }
         return types.get(lic_type, self.default)()
 
-    def json(self):
+    async def json(self):
         """Return a matlab-proxy status JSON object."""
         return {
             "licensing": self.licensed,
@@ -98,19 +99,18 @@ class MockMatlabProxyStatusResponse(httpx.Response):
         }
 
 
-class MockSimpleOkResponse(httpx.Response):
+class MockSimpleOkResponse:
     """A mock of a successful http request that returns empty json."""
 
-    def __init__(self):
-        super().__init__(status_code=httpx.codes.OK)
+    status = http.HTTPStatus.OK
 
     @staticmethod
-    def json():
+    async def json():
         """Return an empty JSON struct."""
         return {}
 
 
-class MockSimpleBadResponse(httpx.Response):
+class MockSimpleBadResponse:
     """A mock of a bad https request."""
 
     def __init__(self, error_message: str) -> None:
@@ -119,12 +119,13 @@ class MockSimpleBadResponse(httpx.Response):
         Args:
             error_message (str): the mock will raise a HTTPError with this error message.
         """
-        super().__init__(status_code=httpx.codes.BAD_REQUEST)
         self.error_message = error_message
+
+    status = http.HTTPStatus.BAD_REQUEST
 
     def raise_for_status(self):
         """Raise a HTTPError with custom error message."""
-        raise httpx.HTTPError(self.error_message)
+        raise aiohttp.client_exceptions.ClientError(self.error_message)
 
 
 class MockError(Exception):

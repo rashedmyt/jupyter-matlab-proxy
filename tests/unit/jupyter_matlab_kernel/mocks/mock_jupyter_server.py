@@ -5,10 +5,11 @@ This module provides a pytest fixture that mocks how matlab-proxy integrates
 with Jupyter server.
 """
 
+import http
 import os
 
-import httpx
 import pytest
+import requests
 from jupyter_server import serverapp
 
 PID = "server 1"
@@ -22,7 +23,7 @@ PASSWORD = ""
 
 
 @pytest.fixture
-def MockJupyterServerFixture(monkeypatch, httpx_mock):
+def MockJupyterServerFixture(monkeypatch):
     """Mock the matlab-proxy integration with JupyterServer.
 
     This fixture provides the mocked calls to emulate that an instance of matlab proxy
@@ -44,11 +45,12 @@ def MockJupyterServerFixture(monkeypatch, httpx_mock):
             }
         ]
 
-    class MockResponse(httpx.Response):
+    class MockResponse:
         def __init__(
-            self, status_code=httpx.codes.OK, text="MWI_MATLAB_PROXY_IDENTIFIER"
+            self, status_code=http.HTTPStatus.OK, text="MWI_MATLAB_PROXY_IDENTIFIER"
         ) -> None:
-            super().__init__(status_code, text=text)
+            self.status_code = status_code
+            self.text = text
 
         @staticmethod
         def json():
@@ -64,9 +66,9 @@ def MockJupyterServerFixture(monkeypatch, httpx_mock):
         if "headers" in kwargs and kwargs["headers"]:
             return MockResponse()
         else:
-            return MockResponse(status_code=httpx.codes.SERVICE_UNAVAILABLE)
+            return MockResponse(status_code=http.HTTPStatus.SERVICE_UNAVAILABLE)
 
     monkeypatch.setattr(serverapp, "list_running_servers", fake_list_running_servers)
     monkeypatch.setattr(os, "getppid", fake_getppid)
-    monkeypatch.setattr(httpx, "get", mock_get)
+    monkeypatch.setattr(requests, "get", mock_get)
     yield

@@ -43,11 +43,12 @@ classifiers = [
 # Existing installations where jupyter-matlab-proxy is being deployed would not get this update.
 # It is safe to update simpervisor to v1.0.0 while keeping jupyter-server-proxy at its existing level.
 dependencies = [
+    "aiohttp",
     "jupyter-server-proxy",
     "simpervisor>=1.0.0",
     "matlab-proxy>=0.10.0",
     "psutil",
-    "httpx",
+    "requests",
     "ipykernel"
 ]
 
@@ -55,7 +56,15 @@ dependencies = [
 Homepage = "https://github.com/mathworks/jupyter-matlab-proxy"
 
 [project.optional-dependencies]
-dev = ["black", "pytest", "pytest-cov", "jupyter-kernel-test", "pytest-playwright", "pytest-httpx", "pytest-asyncio"]
+dev = [
+    "black",
+    "jupyter-kernel-test",
+    "pytest",
+    "pytest-aiohttp",
+    "pytest-asyncio",
+    "pytest-cov",
+    "pytest-playwright"
+]
 
 [project.entry-points.jupyter_serverproxy_servers]
 matlab = "jupyter_matlab_proxy:setup_matlab"

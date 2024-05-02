@@ -2,14 +2,17 @@
 # Implementation of MATLAB Kernel
 
 # Import Python Standard Library
+import asyncio
 import os
 import sys
 import time
 
 # Import Dependencies
-import httpx
+import aiohttp
+import aiohttp.client_exceptions
 import ipykernel.kernelbase
 import psutil
+import requests
 from matlab_proxy import settings as mwi_settings
 from matlab_proxy import util as mwi_util
 
@@ -91,13 +94,10 @@ def _start_matlab_proxy_using_jupyter(url, headers, logger=_logger):
     )
     # send request to the matlab-proxy endpoint to make sure it is available.
     # If matlab-proxy is not started, jupyter-server starts it at this point.
-    resp = httpx.get(url, headers=headers, follow_redirects=True, verify=False)
+    resp = requests.get(url, headers=headers, verify=False)
     logger.debug(f"Received status code: {resp.status_code}")
 
-    return (
-        resp.status_code == httpx.codes.OK
-        and matlab_proxy_index_page_identifier in resp.text
-    )
+    return resp.status_code == 200 and matlab_proxy_index_page_identifier in resp.text
 
 
 def start_matlab_proxy(logger=_logger):
@@ -214,7 +214,7 @@ def start_matlab_proxy(logger=_logger):
         """
                 Error: MATLAB Kernel could not communicate with MATLAB.
                 Reason: Possibly due to invalid jupyter security tokens.
-                """
+        """
     )
 
 
@@ -257,6 +257,8 @@ class MATLABKernel(ipykernel.kernelbase.Kernel):
             self.matlab_proxy = mwi_comm_helpers.MatlabProxyCommunicationManager(
                 self.murl, self.headers, self.log
             )
+            loop = asyncio.get_event_loop()
+            loop.create_task(self.matlab_proxy.connect())
         except MATLABConnectionError as err:
             self.startup_error = err
 
@@ -347,7 +349,10 @@ class MATLABKernel(ipykernel.kernelbase.Kernel):
             self.log.error(
                 f"Exception occurred while processing execution request:\n{e}"
             )
-            if isinstance(e, httpx.HTTPError):
+            if isinstance(e, aiohttp.client_exceptions.ClientError):
+                # Log the HTTPError for debugging
+                self.log.error(e)
+
                 # If exception is an HTTPError, it means MATLAB is unavailable.
                 # Replace the HTTPError with MATLABConnectionError to give
                 # meaningful error message to the user
@@ -404,7 +409,10 @@ class MATLABKernel(ipykernel.kernelbase.Kernel):
                     code, cursor_pos
                 )
             )
-        except (MATLABConnectionError, httpx.HTTPError) as e:
+        except (
+            MATLABConnectionError,
+            aiohttp.client_exceptions.ClientResponseError,
+        ) as e:
             self.log.error(
                 f"Exception occurred while sending shutdown request to MATLAB:\n{e}"
             )
@@ -454,7 +462,10 @@ class MATLABKernel(ipykernel.kernelbase.Kernel):
         try:
             await self.matlab_proxy.send_shutdown_request_to_matlab(self.ident)
             await self.matlab_proxy.disconnect()
-        except (MATLABConnectionError, httpx.HTTPError) as e:
+        except (
+            MATLABConnectionError,
+            aiohttp.client_exceptions.ClientResponseError,
+        ) as e:
             self.log.error(
                 f"Exception occurred while sending shutdown request to MATLAB:\n{e}"
             )
