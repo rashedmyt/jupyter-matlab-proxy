@@ -3,9 +3,9 @@
 import os
 import shutil
 
-import httpx
 import integration_test_utils
 import pytest
+import requests.exceptions
 from matlab_proxy import settings as mwi_settings
 
 _MATLAB_STARTUP_TIMEOUT = mwi_settings.get_process_startup_timeout()
@@ -63,7 +63,10 @@ def matlab_proxy_fixture(module_monkeypatch):
         matlab_proxy_url,
         step=5,
         timeout=_MATLAB_STARTUP_TIMEOUT,
-        ignore_exceptions=(httpx.ConnectError),
+        ignore_exceptions=(
+            requests.exceptions.ConnectionError,
+            requests.exceptions.SSLError,
+        ),
     )
     # License matlab-proxy using playwright UI automation
     integration_test_utils.license_matlab_proxy(matlab_proxy_url)

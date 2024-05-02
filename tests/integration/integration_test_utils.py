@@ -6,7 +6,7 @@ import os
 import socket
 import time
 
-import httpx
+import requests
 from matlab_proxy.settings import get_process_startup_timeout
 
 MATLAB_STARTUP_TIMEOUT = get_process_startup_timeout()
@@ -92,6 +92,7 @@ async def wait_matlab_proxy_ready(matlab_proxy_url):
     matlab_proxy = mwi_comm_helpers.MatlabProxyCommunicationManager(
         matlab_proxy_url, {}
     )
+    await matlab_proxy.connect()
 
     # Poll for matlab-proxy to be up
     while matlab_status in ["down", "starting"] and (
@@ -202,13 +203,13 @@ def unlicense_matlab_proxy(matlab_proxy_url):
     while retries < max_retries:
         error = None
         try:
-            resp = httpx.delete(
+            resp = requests.delete(
                 matlab_proxy_url + "/set_licensing_info",
                 headers={},
                 follow_redirects=True,
                 verify=False,
             )
-            if resp.status_code == httpx.codes.OK:
+            if resp.status_code == requests.codes.OK:
                 data = resp.json()
                 assert data["licensing"] is None, "matlab-proxy licensing is not unset"
                 assert (
@@ -255,8 +256,8 @@ def poll_web_service(url, step=1, timeout=60, ignore_exceptions=None):
 
     while time.time() < end_time:
         try:
-            response = httpx.get(url, follow_redirects=True, verify=False)
-            if response.status_code == httpx.codes.OK:
+            response = requests.get(url, follow_redirects=True, verify=False)
+            if response.status_code == 200:
                 return response
 
         except Exception as e:
