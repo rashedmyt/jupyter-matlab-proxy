@@ -206,7 +206,6 @@ def unlicense_matlab_proxy(matlab_proxy_url):
             resp = requests.delete(
                 matlab_proxy_url + "/set_licensing_info",
                 headers={},
-                follow_redirects=True,
                 verify=False,
             )
             if resp.status_code == requests.codes.OK:
@@ -256,7 +255,7 @@ def poll_web_service(url, step=1, timeout=60, ignore_exceptions=None):
 
     while time.time() < end_time:
         try:
-            response = requests.get(url, follow_redirects=True, verify=False)
+            response = requests.get(url, verify=False)
             if response.status_code == 200:
                 return response
 
