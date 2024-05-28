@@ -36,6 +36,9 @@ class MatlabProxyCommunicationManager:
         # )
 
     async def connect(self):
+        # This needs to be done in an async function. We cannot specify base url
+        # as it may contain additional path (such as in jupyterhub.com/user/matlab)
+        # which is not supported by ClientSession
         self._http_client = aiohttp.ClientSession(
             connector=aiohttp.TCPConnector(ssl=False),
             headers=self.headers,
