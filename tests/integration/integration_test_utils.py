@@ -114,6 +114,7 @@ async def wait_matlab_proxy_ready(matlab_proxy_url):
     assert (
         matlab_status == "up"
     ), f"matlab-proxy process did not start successfully\nMATLAB Status is '{matlab_status}'"
+    await matlab_proxy.disconnect()
 
 
 def get_random_free_port() -> str:

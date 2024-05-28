@@ -49,6 +49,7 @@ def matlab_proxy_fixture(module_monkeypatch):
         "MWI_APP_PORT": mwi_app_port,
         "MWI_BASE_URL": mwi_base_url,
         "MWI_LOG_FILE": str(matlab_proxy_logs_path),
+        "MWI_ENABLE_TOKEN_AUTH": "False",
     }
 
     # Get event loop to start matlab-proxy in background
@@ -83,6 +84,8 @@ def matlab_proxy_fixture(module_monkeypatch):
 
     # Run the jupyter kernel tests
     yield
+
+    print("Terminating matlab-proxy")
 
     # Terminate matlab-proxy
     proc.terminate()
