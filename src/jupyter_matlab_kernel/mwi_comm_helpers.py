@@ -1,6 +1,7 @@
 # Copyright 2023-2024 The MathWorks, Inc.
 # Helper functions to communicate with matlab-proxy and MATLAB
 
+import asyncio
 import json
 import pathlib
 
@@ -31,22 +32,41 @@ class MatlabProxyCommunicationManager:
         self.url = url
         self.headers = headers
         self.logger = logger
+        self._http_client = None
+        self._http_io_client = None
+        self._http_control_client = None
         # self._httpx_client = httpx.AsyncClient(
         #     headers=headers, verify=False, follow_redirects=True, base_url=url
         # )
 
-    async def connect(self):
+    async def connect(
+        self, io_loop=asyncio.get_event_loop(), control_loop=asyncio.get_event_loop()
+    ):
         # This needs to be done in an async function. We cannot specify base url
         # as it may contain additional path (such as in jupyterhub.com/user/matlab)
         # which is not supported by ClientSession
-        self._http_client = aiohttp.ClientSession(
-            connector=aiohttp.TCPConnector(ssl=False),
-            headers=self.headers,
-            trust_env=True,
-        )
+        if self._http_io_client is None:
+            self._http_io_client = aiohttp.ClientSession(
+                connector=aiohttp.TCPConnector(ssl=False, loop=io_loop),
+                headers=self.headers,
+                trust_env=True,
+            )
+
+        if self._http_control_client is None:
+            self._http_control_client = aiohttp.ClientSession(
+                connector=aiohttp.TCPConnector(ssl=False, loop=control_loop),
+                headers=self.headers,
+                trust_env=True,
+            )
+
+        if self._http_client is None:
+            self._http_client = self._http_io_client
 
     async def disconnect(self):
-        await self._http_client.close()
+        if self._http_io_client is not None:
+            await self._http_io_client.close()
+        if self._http_control_client is not None:
+            await self._http_control_client.close()
 
     async def fetch_matlab_proxy_status(self):
         """
@@ -137,10 +157,17 @@ class MatlabProxyCommunicationManager:
         Raises:
             HTTPError: Occurs when connection to matlab-proxy cannot be established.
         """
+        current_client = self._http_client
+        self._http_client = self._http_control_client
         self.logger.debug("Sending shutdown request to MATLAB")
-        return await self._send_jupyter_request_to_matlab("shutdown", [kernelid])
+        try:
+            return await self._send_jupyter_request_to_matlab("shutdown", [kernelid])
+        finally:
+            self._http_client = current_client
 
     async def send_interrupt_request_to_matlab(self):
+        current_client = self._http_client
+        self._http_client = self._http_control_client
         self.logger.debug("Sending interrupt request to MATLAB")
         req_body = {
             "messages": {
@@ -156,10 +183,13 @@ class MatlabProxyCommunicationManager:
         self.logger.debug(f"Request URL: {url}")
         self.logger.debug(f"Request Headers:\n{self.headers}")
         self.logger.debug(f"Request Body:\n{req_body}")
-        resp = await self._http_client.post(
-            url,
-            json=req_body,
-        )
+        try:
+            resp = await self._http_client.post(
+                url,
+                json=req_body,
+            )
+        finally:
+            self._http_client = current_client
         self.logger.debug(f"Received status code: {resp.status}")
         if resp.status != 200:
             self.logger.error("Error occurred during communication with matlab-proxy")

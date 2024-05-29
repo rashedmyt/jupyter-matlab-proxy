@@ -258,7 +258,11 @@ class MATLABKernel(ipykernel.kernelbase.Kernel):
                 self.murl, self.headers, self.log
             )
             loop = asyncio.get_event_loop()
-            loop.run_until_complete(self.matlab_proxy.connect())
+            loop.run_until_complete(
+                self.matlab_proxy.connect(
+                    loop, self.control_thread.io_loop.asyncio_loop
+                )
+            )
         except MATLABConnectionError as err:
             self.startup_error = err
 
