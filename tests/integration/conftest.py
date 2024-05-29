@@ -85,10 +85,19 @@ def matlab_proxy_fixture(module_monkeypatch):
     # Run the jupyter kernel tests
     yield
 
-    print("Terminating matlab-proxy")
-
     # Terminate matlab-proxy
+    import psutil
+
+    children_process = psutil.Process(proc.pid).children(recursive=True)
+    print(f"Terminating process {proc.pid}")
     proc.terminate()
+    for process in children_process:
+        print(f"Terminating process {process.pid}")
+        try:
+            process.terminate()
+            process.wait()
+        except Exception:
+            pass
     loop.run_until_complete(proc.wait())
 
 
