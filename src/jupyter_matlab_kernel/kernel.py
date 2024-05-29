@@ -257,7 +257,8 @@ class MATLABKernel(ipykernel.kernelbase.Kernel):
             self.matlab_proxy = mwi_comm_helpers.MatlabProxyCommunicationManager(
                 self.murl, self.headers, self.log
             )
-            asyncio.run(self.matlab_proxy.connect())
+            loop = asyncio.get_event_loop()
+            loop.run_until_complete(self.matlab_proxy.connect())
         except MATLABConnectionError as err:
             self.startup_error = err
 
