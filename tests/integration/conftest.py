@@ -1,11 +1,12 @@
-# Copyright 2023 The MathWorks, Inc.
+# Copyright 2023-2024 The MathWorks, Inc.
 
 import os
 import shutil
+
 import integration_test_utils
+import psutil
 import pytest
 import requests
-
 from matlab_proxy import settings as mwi_settings
 
 _MATLAB_STARTUP_TIMEOUT = mwi_settings.get_process_startup_timeout()
@@ -49,6 +50,7 @@ def matlab_proxy_fixture(module_monkeypatch):
         "MWI_APP_PORT": mwi_app_port,
         "MWI_BASE_URL": mwi_base_url,
         "MWI_LOG_FILE": str(matlab_proxy_logs_path),
+        "MWI_ENABLE_TOKEN_AUTH": "False",
     }
 
     # Get event loop to start matlab-proxy in background
@@ -82,8 +84,16 @@ def matlab_proxy_fixture(module_monkeypatch):
     # Run the jupyter kernel tests
     yield
 
-    # Terminate matlab-proxy
+    child_process = psutil.Process(proc.pid).children(recursive=True)
+
+    # Terminate matlab-proxy and its children
     proc.terminate()
+    for process in child_process:
+        try:
+            process.terminate()
+            process.wait()
+        except Exception:
+            pass
     loop.run_until_complete(proc.wait())
 
 
