@@ -7,6 +7,7 @@ on:
   # Reusable workflow
   # Trigger on workflow call
   workflow_call:
+  push: # TODO: Remove
 
 jobs:
   python_integration_tests:
@@ -66,5 +67,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: MATLAB Proxy Integration Test Log File
-          path: ${{ matrix.os }}${{ matrix.matlab-release }}${{ matrix.python-version }}.log
+          path: |
+            ${{ matrix.os }}${{ matrix.matlab-release }}${{ matrix.python-version }}.log
+            ./licensing-screenshot-failed.png
           retention-days: 7

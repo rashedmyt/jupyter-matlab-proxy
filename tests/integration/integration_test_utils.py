@@ -7,7 +7,6 @@ import socket
 import time
 
 import requests
-
 from matlab_proxy.settings import get_process_startup_timeout
 
 MATLAB_STARTUP_TIMEOUT = get_process_startup_timeout()
@@ -41,7 +40,6 @@ def matlab_proxy_cmd_for_testing():
     """
 
     import matlab_proxy
-
     from jupyter_matlab_proxy.jupyter_config import config
 
     matlab_cmd = [
@@ -85,9 +83,8 @@ def wait_matlab_proxy_ready(matlab_proxy_url):
         matlab_proxy_url (string): URL to access matlab-proxy
     """
 
-    from matlab_proxy.util import system
-
     from jupyter_matlab_kernel import mwi_comm_helpers
+    from matlab_proxy.util import system
 
     is_matlab_licensed = False
     matlab_status = "down"
@@ -140,7 +137,7 @@ def license_matlab_proxy(matlab_proxy_url):
     Args:
         matlab_proxy_url (string): URL to access matlab-proxy
     """
-    from playwright.sync_api import sync_playwright, expect
+    from playwright.sync_api import expect, sync_playwright
 
     # These are MathWorks Account credentials to license MATLAB
     # Throws 'KeyError' if the following environment variables are not set
@@ -148,45 +145,53 @@ def license_matlab_proxy(matlab_proxy_url):
     TEST_PASSWORD = os.environ["TEST_PASSWORD"]
 
     with sync_playwright() as playwright:
-        browser = playwright.chromium.launch(headless=True)
-        page = browser.new_page()
-        page.goto(matlab_proxy_url)
+        try:
+            browser = playwright.chromium.launch(headless=True)
+            page = browser.new_page()
+            page.goto(matlab_proxy_url)
 
-        # Find the MHLM licensing windows in matlab-proxy
-        mhlm_div = page.locator("#MHLM")
-        expect(
-            mhlm_div,
-            "Wait for MHLM licensing window to appear. This might fail if the MATLAB is already licensed",
-        ).to_be_visible(timeout=60000)
+            # Find the MHLM licensing windows in matlab-proxy
+            mhlm_div = page.locator("#MHLM")
+            expect(
+                mhlm_div,
+                "Wait for MHLM licensing window to appear. This might fail if the MATLAB is already licensed",
+            ).to_be_visible(timeout=60000)
 
-        # The login iframe is present within the MHLM Div
-        login_iframe = mhlm_div.frame_locator("#loginframe")
+            # The login iframe is present within the MHLM Div
+            login_iframe = mhlm_div.frame_locator("#loginframe")
 
-        # Fills in the username textbox
-        email_text_box = login_iframe.locator("#userId")
-        expect(
-            email_text_box,
-            "Wait for email ID textbox to appear",
-        ).to_be_visible(timeout=20000)
-        email_text_box.fill(TEST_USERNAME)
-        email_text_box.press("Enter")
+            # Fills in the username textbox
+            email_text_box = login_iframe.locator("#userId")
+            expect(
+                email_text_box,
+                "Wait for email ID textbox to appear",
+            ).to_be_visible(timeout=20000)
+            email_text_box.fill(TEST_USERNAME)
+            email_text_box.press("Enter")
 
-        # Fills in the password textbox
-        password_text_box = login_iframe.locator("#password")
-        expect(password_text_box, "Wait for password textbox to appear").to_be_visible(
-            timeout=20000
-        )
-        password_text_box.fill(TEST_PASSWORD)
-        password_text_box.press("Enter")
-        password_text_box.press("Enter")
+            # Fills in the password textbox
+            password_text_box = login_iframe.locator("#password")
+            expect(
+                password_text_box, "Wait for password textbox to appear"
+            ).to_be_visible(timeout=20000)
+            password_text_box.fill(TEST_PASSWORD)
+            password_text_box.press("Enter")
+            password_text_box.press("Enter")
 
-        # Verifies if licensing is successful by checking the status information
-        status_info = page.get_by_text("Status Information")
-        expect(
-            status_info,
-            "Verify if Licensing is successful. This might fail if incorrect credentials are provided",
-        ).to_be_visible(timeout=60000)
-        browser.close()
+            # Verifies if licensing is successful by checking the status information
+            status_info = page.get_by_text("Status Information")
+            expect(
+                status_info,
+                "Verify if Licensing is successful. This might fail if incorrect credentials are provided",
+            ).to_be_visible(timeout=60000)
+        except Exception:
+            log_dir = "./"
+            file_name = "licensing-screenshot-failed.png"
+            file_path = os.path.join(log_dir, file_name)
+            os.makedirs(log_dir, exist_ok=True)
+            page.screenshot(path=file_path)
+        finally:
+            browser.close()
 
 
 def unlicense_matlab_proxy(matlab_proxy_url):
