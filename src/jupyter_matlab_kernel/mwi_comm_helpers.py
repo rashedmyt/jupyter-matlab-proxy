@@ -1,6 +1,7 @@
 # Copyright 2023-2024 The MathWorks, Inc.
 # Helper functions to communicate with matlab-proxy and MATLAB
 
+import http
 import json
 import pathlib
 
@@ -34,9 +35,6 @@ class MWICommHelper:
         self.logger = logger
         self._http_shell_client = None
         self._http_control_client = None
-        # self._httpx_client = httpx.AsyncClient(
-        #     headers=headers, verify=False, follow_redirects=True, base_url=url
-        # )
 
     async def connect(self, shell_loop, control_loop):
         # Disable timeout as the execution of MATLAB code might be longer.
@@ -85,7 +83,7 @@ class MWICommHelper:
         self.logger.debug("Fetching matlab-proxy status")
         resp = await self._http_shell_client.get(self.url + "/get_status")
         self.logger.debug(f"Received status code: {resp.status}")
-        if resp.status == 200:
+        if resp.status == http.HTTPStatus.OK:
             data = await resp.json()
             self.logger.debug(f"Response:\n{data}")
             is_matlab_licensed = check_licensing_status(data)
@@ -181,7 +179,7 @@ class MWICommHelper:
         self.logger.debug(f"Request Body:\n{req_body}")
         resp = await self._http_control_client.post(url, json=req_body)
         self.logger.debug(f"Received status code: {resp.status}")
-        if resp.status != 200:
+        if resp.status != http.HTTPStatus.OK:
             self.logger.error("Error occurred during communication with matlab-proxy")
             resp.raise_for_status()
 
@@ -210,7 +208,7 @@ class MWICommHelper:
             json=req_body,
         )
         self.logger.debug(f"Received status code: {resp.status}")
-        if resp.status == 200:
+        if resp.status == http.HTTPStatus.OK:
             response_data = await resp.json()
             self.logger.debug(f"Response:\n{response_data}")
             try:
@@ -266,7 +264,7 @@ class MWICommHelper:
             json=req_body,
         )
         self.logger.debug(f"Received status code: {resp.status}")
-        if resp.status == 200:
+        if resp.status == http.HTTPStatus.OK:
             response_data = await resp.json()
             self.logger.debug(f"Response:\n{response_data}")
             try:

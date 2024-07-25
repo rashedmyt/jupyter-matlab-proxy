@@ -3,6 +3,7 @@
 
 # Import Python Standard Library
 import asyncio
+import http
 import os
 import sys
 import time
@@ -19,8 +20,6 @@ from matlab_proxy import util as mwi_util
 from jupyter_matlab_kernel import mwi_logger
 from jupyter_matlab_kernel.mwi_comm_helpers import MWICommHelper
 from jupyter_matlab_kernel.mwi_exceptions import MATLABConnectionError
-
-from jupyter_matlab_kernel import mwi_comm_helpers, mwi_logger
 
 _MATLAB_STARTUP_TIMEOUT = mwi_settings.get_process_startup_timeout()
 _logger = mwi_logger.get()
@@ -100,7 +99,10 @@ def _start_matlab_proxy_using_jupyter(url, headers, logger=_logger):
     resp = requests.get(url, headers=headers, verify=False)
     logger.debug(f"Received status code: {resp.status_code}")
 
-    return resp.status_code == 200 and matlab_proxy_index_page_identifier in resp.text
+    return (
+        resp.status_code == http.HTTPStatus.OK
+        and matlab_proxy_index_page_identifier in resp.text
+    )
 
 
 def start_matlab_proxy(logger=_logger):
