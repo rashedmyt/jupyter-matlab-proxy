@@ -1,12 +1,13 @@
 # Copyright 2023-2024 The MathWorks, Inc.
 # This file contains tests for jupyter_matlab_kernel.mwi_comm_helpers
 
+import asyncio
 import http
 
 import aiohttp
 import aiohttp.client_exceptions
 import pytest
-from jupyter_matlab_kernel.mwi_comm_helpers import MatlabProxyCommunicationManager
+from jupyter_matlab_kernel.mwi_comm_helpers import MWICommHelper
 from jupyter_matlab_kernel.mwi_exceptions import MATLABConnectionError
 from mocks.mock_http_responses import (
     MockMatlabProxyStatusResponse,
@@ -19,8 +20,9 @@ from mocks.mock_http_responses import (
 async def matlab_proxy_fixture():
     url = "http://localhost"
     headers = {}
-    matlab_proxy = MatlabProxyCommunicationManager(url, headers)
-    await matlab_proxy.connect()
+    matlab_proxy = MWICommHelper(url, headers)
+    loop = asyncio.get_event_loop()
+    await matlab_proxy.connect(loop, loop)
     yield matlab_proxy
     await matlab_proxy.disconnect()
 

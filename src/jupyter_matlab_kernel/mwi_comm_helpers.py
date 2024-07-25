@@ -7,7 +7,6 @@ import pathlib
 
 import aiohttp
 from matlab_proxy.util.mwi.embedded_connector.helpers import (
-    __generate_uuid,
     get_data_to_eval_mcode,
     get_data_to_feval_mcode,
     get_mvm_endpoint,
@@ -167,7 +166,7 @@ class MWICommHelper:
             "messages": {
                 "Interrupt": [
                     {
-                        "uuid": __generate_uuid(),
+                        "uuid": "1234",
                     }
                 ]
             }

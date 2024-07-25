@@ -83,16 +83,15 @@ async def wait_matlab_proxy_ready(matlab_proxy_url):
         matlab_proxy_url (string): URL to access matlab-proxy
     """
 
-    from jupyter_matlab_kernel import mwi_comm_helpers
+    from jupyter_matlab_kernel.mwi_comm_helpers import MWICommHelper
 
     is_matlab_licensed = False
     matlab_status = "down"
     start_time = time.time()
 
-    matlab_proxy = mwi_comm_helpers.MatlabProxyCommunicationManager(
-        matlab_proxy_url, {}
-    )
-    await matlab_proxy.connect()
+    loop = asyncio.get_event_loop()
+    matlab_proxy = MWICommHelper(matlab_proxy_url, {})
+    await matlab_proxy.connect(loop, loop)
 
     # Poll for matlab-proxy to be up
     while matlab_status in ["down", "starting"] and (
