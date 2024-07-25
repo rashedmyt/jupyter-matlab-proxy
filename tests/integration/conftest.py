@@ -1,9 +1,11 @@
 # Copyright 2023-2024 The MathWorks, Inc.
 
+import asyncio
 import os
 import shutil
 
 import integration_test_utils
+import psutil
 import pytest
 import requests.exceptions
 from matlab_proxy import settings as mwi_settings
@@ -49,7 +51,7 @@ def matlab_proxy_fixture(module_monkeypatch):
         "MWI_APP_PORT": mwi_app_port,
         "MWI_BASE_URL": mwi_base_url,
         "MWI_LOG_FILE": str(matlab_proxy_logs_path),
-        "MWI_ENABLE_TOKEN_AUTH": "False",
+        "MWI_ENABLE_TOKEN_AUTH": "false",
     }
 
     # Get event loop to start matlab-proxy in background
@@ -86,19 +88,20 @@ def matlab_proxy_fixture(module_monkeypatch):
     yield
 
     # Terminate matlab-proxy
-    import psutil
-
-    children_process = psutil.Process(proc.pid).children(recursive=True)
-    print(f"Terminating process {proc.pid}")
-    proc.terminate()
-    for process in children_process:
-        print(f"Terminating process {process.pid}")
+    timeout = 120
+    child_process = psutil.Process(proc.pid).children(recursive=True)
+    for process in child_process:
         try:
             process.terminate()
             process.wait()
         except Exception:
             pass
-    loop.run_until_complete(proc.wait())
+
+    try:
+        proc.terminate()
+        loop.run_until_complete(asyncio.wait_for(proc.wait(), timeout=timeout))
+    except Exception:
+        proc.kill()
 
 
 @pytest.fixture(scope="module", autouse=True)

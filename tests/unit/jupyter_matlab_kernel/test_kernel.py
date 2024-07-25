@@ -57,6 +57,8 @@ def test_start_matlab_proxy_secure(monkeypatch, MockJupyterServerFixture):
                 "secure": True,
                 "token": MockJupyterServer.TEST_TOKEN,
                 "password": MockJupyterServer.PASSWORD,
+                "hostname": MockJupyterServer.HOSTNAME,
+                "url": MockJupyterServer.SECURE_URL,
             }
         ]
 
