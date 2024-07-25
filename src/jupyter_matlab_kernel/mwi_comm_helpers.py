@@ -1,12 +1,12 @@
 # Copyright 2023-2024 The MathWorks, Inc.
 # Helper functions to communicate with matlab-proxy and MATLAB
 
-import asyncio
 import json
 import pathlib
 
 import aiohttp
 from matlab_proxy.util.mwi.embedded_connector.helpers import (
+    __generate_uuid,
     get_data_to_eval_mcode,
     get_data_to_feval_mcode,
     get_mvm_endpoint,
@@ -27,29 +27,30 @@ def check_licensing_status(data):
     return licensing_status
 
 
-class MatlabProxyCommunicationManager:
+class MWICommHelper:
     def __init__(self, url, headers=None, logger=_logger) -> None:
         self.url = url
         self.headers = headers
         self.logger = logger
-        self._http_client = None
-        self._http_io_client = None
+        self._http_shell_client = None
         self._http_control_client = None
         # self._httpx_client = httpx.AsyncClient(
         #     headers=headers, verify=False, follow_redirects=True, base_url=url
         # )
 
-    async def connect(
-        self, io_loop=asyncio.get_event_loop(), control_loop=asyncio.get_event_loop()
-    ):
+    async def connect(self, shell_loop, control_loop):
+        # Disable timeout as the execution of MATLAB code might be longer.
+        timeout = aiohttp.ClientTimeout(total=None)
+
         # This needs to be done in an async function. We cannot specify base url
         # as it may contain additional path (such as in jupyterhub.com/user/matlab)
         # which is not supported by ClientSession
-        if self._http_io_client is None:
-            self._http_io_client = aiohttp.ClientSession(
-                connector=aiohttp.TCPConnector(ssl=False, loop=io_loop),
+        if self._http_shell_client is None:
+            self._http_shell_client = aiohttp.ClientSession(
+                connector=aiohttp.TCPConnector(ssl=False, loop=shell_loop),
                 headers=self.headers,
                 trust_env=True,
+                timeout=timeout,
             )
 
         if self._http_control_client is None:
@@ -57,14 +58,12 @@ class MatlabProxyCommunicationManager:
                 connector=aiohttp.TCPConnector(ssl=False, loop=control_loop),
                 headers=self.headers,
                 trust_env=True,
+                timeout=timeout,
             )
 
-        if self._http_client is None:
-            self._http_client = self._http_io_client
-
     async def disconnect(self):
-        if self._http_io_client is not None:
-            await self._http_io_client.close()
+        if self._http_shell_client is not None:
+            await self._http_shell_client.close()
         if self._http_control_client is not None:
             await self._http_control_client.close()
 
@@ -84,7 +83,7 @@ class MatlabProxyCommunicationManager:
             HTTPError: Occurs when connection to matlab-proxy cannot be established.
         """
         self.logger.debug("Fetching matlab-proxy status")
-        resp = await self._http_client.get(self.url + "/get_status")
+        resp = await self._http_shell_client.get(self.url + "/get_status")
         self.logger.debug(f"Received status code: {resp.status}")
         if resp.status == 200:
             data = await resp.json()
@@ -113,7 +112,9 @@ class MatlabProxyCommunicationManager:
             HTTPStatusError: Occurs when connection to matlab-proxy cannot be established.
         """
         self.logger.debug("Sending execution request to MATLAB")
-        return await self._send_jupyter_request_to_matlab("execute", [code, kernelid])
+        return await self._send_jupyter_request_to_matlab(
+            "execute", [code, kernelid], self._http_shell_client
+        )
 
     async def send_completion_request_to_matlab(self, code, cursor_pos):
         """
@@ -142,7 +143,7 @@ class MatlabProxyCommunicationManager:
         """
         self.logger.debug("Sending completion request to MATLAB")
         return await self._send_jupyter_request_to_matlab(
-            "complete", [code, cursor_pos]
+            "complete", [code, cursor_pos], self._http_shell_client
         )
 
     async def send_shutdown_request_to_matlab(self, kernelid):
@@ -157,23 +158,18 @@ class MatlabProxyCommunicationManager:
         Raises:
             HTTPError: Occurs when connection to matlab-proxy cannot be established.
         """
-        current_client = self._http_client
-        self._http_client = self._http_control_client
         self.logger.debug("Sending shutdown request to MATLAB")
-        try:
-            return await self._send_jupyter_request_to_matlab("shutdown", [kernelid])
-        finally:
-            self._http_client = current_client
+        return await self._send_jupyter_request_to_matlab(
+            "shutdown", [kernelid], self._http_control_client
+        )
 
     async def send_interrupt_request_to_matlab(self):
-        current_client = self._http_client
-        self._http_client = self._http_control_client
         self.logger.debug("Sending interrupt request to MATLAB")
         req_body = {
             "messages": {
                 "Interrupt": [
                     {
-                        "uuid": "1234",
+                        "uuid": __generate_uuid(),
                     }
                 ]
             }
@@ -183,19 +179,13 @@ class MatlabProxyCommunicationManager:
         self.logger.debug(f"Request URL: {url}")
         self.logger.debug(f"Request Headers:\n{self.headers}")
         self.logger.debug(f"Request Body:\n{req_body}")
-        try:
-            resp = await self._http_client.post(
-                url,
-                json=req_body,
-            )
-        finally:
-            self._http_client = current_client
+        resp = await self._http_control_client.post(url, json=req_body)
         self.logger.debug(f"Received status code: {resp.status}")
         if resp.status != 200:
             self.logger.error("Error occurred during communication with matlab-proxy")
             resp.raise_for_status()
 
-    async def _send_feval_request_to_matlab(self, fname, nargout, *args):
+    async def _send_feval_request_to_matlab(self, http_client, fname, nargout, *args):
         self.logger.debug("Sending FEval request to MATLAB")
         # Add the MATLAB code shipped with kernel to the Path
         path = [str(pathlib.Path(__file__).parent / "matlab")]
@@ -215,7 +205,7 @@ class MatlabProxyCommunicationManager:
         self.logger.debug(f"Request Headers:\n{self.headers}")
         self.logger.debug(f"Request Body:\n{req_body}")
 
-        resp = await self._http_client.post(
+        resp = await http_client.post(
             url,
             json=req_body,
         )
@@ -259,7 +249,7 @@ class MatlabProxyCommunicationManager:
             self.logger.error("Error occurred during communication with matlab-proxy")
             raise resp.raise_for_status()
 
-    async def _send_eval_request_to_matlab(self, mcode):
+    async def _send_eval_request_to_matlab(self, http_client, mcode):
         self.logger.debug("Sending Eval request to MATLAB")
         # Add the MATLAB code shipped with kernel to the Path
         path = str(pathlib.Path(__file__).parent / "matlab")
@@ -271,7 +261,7 @@ class MatlabProxyCommunicationManager:
         self.logger.debug(f"Request URL: {url}")
         self.logger.debug(f"Request Headers:\n{self.headers}")
         self.logger.debug(f"Request Body:\n{req_body}")
-        resp = await self._http_client.post(
+        resp = await http_client.post(
             url,
             json=req_body,
         )
@@ -338,7 +328,7 @@ class MatlabProxyCommunicationManager:
             self.logger.error("Error during communication with matlab-proxy")
             raise resp.raise_for_status()
 
-    async def _send_jupyter_request_to_matlab(self, request_type, inputs):
+    async def _send_jupyter_request_to_matlab(self, request_type, inputs, http_client):
         execution_request_type = "feval"
 
         inputs.insert(0, request_type)
@@ -350,7 +340,7 @@ class MatlabProxyCommunicationManager:
 
         if execution_request_type == "feval":
             resp = await self._send_feval_request_to_matlab(
-                "processJupyterKernelRequest", 1, *inputs
+                http_client, "processJupyterKernelRequest", 1, *inputs
             )
         else:
             user_mcode = inputs[2]
@@ -371,6 +361,6 @@ class MatlabProxyCommunicationManager:
                 args = args + "," + str(cursor_pos)
 
             eval_mcode = f"processJupyterKernelRequest({args})"
-            resp = await self._send_eval_request_to_matlab(eval_mcode)
+            resp = await self._send_eval_request_to_matlab(http_client, eval_mcode)
 
         return resp
