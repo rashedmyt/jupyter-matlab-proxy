@@ -65,10 +65,10 @@ class MWICommHelper:
             control_loop : event loop corresponding to the Control channel in Jupyter Messaging Protocol
         """
         if self._http_shell_client is None:
-            self._http_shell_client = self._create_http_session(shell_loop)
+            self._http_shell_client = await self._create_http_session(shell_loop)
 
         if self._http_control_client is None:
-            self._http_control_client = self._create_http_session(control_loop)
+            self._http_control_client = await  self._create_http_session(control_loop)
 
     async def disconnect(self):
         if self._http_shell_client:
