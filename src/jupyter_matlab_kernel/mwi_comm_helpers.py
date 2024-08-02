@@ -35,33 +35,45 @@ class MWICommHelper:
         self._http_shell_client = None
         self._http_control_client = None
 
-    async def connect(self, shell_loop, control_loop):
+    async def _create_http_session(self, loop):
+        """Helper function to create a aiohttp ClientSession which uses a given asyncio event loop
+
+        Args:
+            loop : asyncio event loop
+
+        Returns:
+            ClientSession : aiohttp ClientSession with disabled timeouts and required headers.
+        """
         # Disable timeout as the execution of MATLAB code might be longer.
         timeout = aiohttp.ClientTimeout(total=None)
 
-        # This needs to be done in an async function. We cannot specify base url
-        # as it may contain additional path (such as in jupyterhub.com/user/matlab)
+        # Creation of ClientSession needs to be done in an async function. We cannot
+        # specify base url as it may contain additional path (such as in jupyterhub.com/user/matlab)
         # which is not supported by ClientSession
+        return aiohttp.ClientSession(
+            connector=aiohttp.TCPConnector(ssl=False, loop=loop),
+            headers=self.headers,
+            trust_env=True,
+            timeout=timeout,
+        )
+
+    async def connect(self, shell_loop, control_loop):
+        """Initializes the HTTP clients with the given event loops
+
+        Args:
+            shell_loop : event loop corresponding to the Shell channel in Jupyter Messaging Protocol
+            control_loop : event loop corresponding to the Control channel in Jupyter Messaging Protocol
+        """
         if self._http_shell_client is None:
-            self._http_shell_client = aiohttp.ClientSession(
-                connector=aiohttp.TCPConnector(ssl=False, loop=shell_loop),
-                headers=self.headers,
-                trust_env=True,
-                timeout=timeout,
-            )
+            self._http_shell_client = self._create_http_session(shell_loop)
 
         if self._http_control_client is None:
-            self._http_control_client = aiohttp.ClientSession(
-                connector=aiohttp.TCPConnector(ssl=False, loop=control_loop),
-                headers=self.headers,
-                trust_env=True,
-                timeout=timeout,
-            )
+            self._http_control_client = self._create_http_session(control_loop)
 
     async def disconnect(self):
-        if self._http_shell_client is not None:
+        if self._http_shell_client:
             await self._http_shell_client.close()
-        if self._http_control_client is not None:
+        if self._http_control_client:
             await self._http_control_client.close()
 
     async def fetch_matlab_proxy_status(self):
