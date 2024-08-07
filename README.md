@@ -1,6 +1,7 @@
 # MATLAB Integration _for Jupyter_
 
-[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/mathworks/jupyter-matlab-proxy/test-jupyter-matlab-proxy.yml?branch=main&logo=github)](https://github.com/mathworks/jupyter-matlab-proxy/actions) [![PyPI badge](https://img.shields.io/pypi/v/jupyter-matlab-proxy.svg?logo=pypi)](https://pypi.python.org/pypi/jupyter-matlab-proxy) [![codecov](https://codecov.io/gh/mathworks/jupyter-matlab-proxy/branch/main/graph/badge.svg?token=ZW3SESKCSS)](https://codecov.io/gh/mathworks/jupyter-matlab-proxy)
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/mathworks/jupyter-matlab-proxy/run-tests.yml?branch=main&logo=github)](https://github.com/mathworks/jupyter-matlab-proxy/actions) [![PyPI badge](https://img.shields.io/pypi/v/jupyter-matlab-proxy.svg?logo=pypi)](https://pypi.python.org/pypi/jupyter-matlab-proxy) [![codecov](https://codecov.io/gh/mathworks/jupyter-matlab-proxy/branch/main/graph/badge.svg?token=ZW3SESKCSS)](https://codecov.io/gh/mathworks/jupyter-matlab-proxy) [![Downloads](https://static.pepy.tech/personalized-badge/jupyter-matlab-proxy?period=month&units=international_system&left_color=grey&right_color=blue&left_text=PyPI%20downloads/month)](https://pepy.tech/project/jupyter-matlab-proxy)
+
 
 
 Run MATLAB® code in Jupyter® environments such as Jupyter notebooks, JupyterLab, and JupyterHub.
@@ -106,15 +107,11 @@ Install Jupyter Notebook or JupyterLab:
   # For Jupyter Notebook
   python -m pip install notebook
 
-  # For JupyterLab 3
-  python -m pip install 'jupyterlab>=3.0.0,<4.0.0a0'
+  # For JupyterLab 4
+  python -m pip install jupyterlab
   ```
 
-Note: the package allows you to execute MATLAB code in both JupyterLab 3 and JupyterLab 4, but syntax highlighting and auto indentation are currently only supported on JupyterLab 3.
-
-> :warning: **Functionality being removed or changed.** </br>
-> Project Jupyter ended maintenance of JupyterLab 3 on May 15, 2024. For details, see [JupyterLab 3 End of Maintenance](https://blog.jupyter.org/jupyterlab-3-end-of-maintenance-879778927db2).
-> Starting from a future release of MATLAB Integration _for Jupyter_, editor features such as syntax highlighting and autoindentation will be removed from JupyterLab 3 and introduced for JupyterLab 4. Execution of MATLAB code will remain available with both JupyterLab 3 and JupyterLab 4.
+Note: you can use this package to execute MATLAB code in both JupyterLab 3 and 4, but syntax highlighting is only supported on JupyterLab 4.
 
 
 Open your Jupyter environment by starting Jupyter Notebook or JupyterLab.
@@ -185,7 +182,7 @@ You can also edit MATLAB `.m` files in JupyterLab. Click the `MATLAB File` butto
 
 <p align="center"><img width="300" src="https://github.com/mathworks/jupyter-matlab-proxy/raw/main/img/matlabfile-icon.png"></p>
 
-This opens an untitled `.m` file where you can write MATLAB code with syntax highlighting and auto indentation.
+This opens an untitled `.m` file where you can write MATLAB code with syntax highlighting.
 
 <p align="center"><img width="600" src="https://github.com/mathworks/jupyter-matlab-proxy/raw/main/img/new-matlab-file.png"></p>
 
