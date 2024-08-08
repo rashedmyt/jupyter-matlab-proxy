@@ -256,13 +256,16 @@ class MATLABKernel(ipykernel.kernelbase.Kernel):
 
         # Update log instance with kernel id. This helps in identifying logs from
         # multiple kernels which are running simultaneously
-        self.log.debug(f"Initializing kernel with id: {self.ident}")
-        self.log = self.log.getChild(f"{self.ident}")
+        kernelid = self.ident
+        self.log.debug(f"Initializing kernel with id: {kernelid}")
+        self.log = self.log.getChild(f"{kernelid}")
 
         try:
             # Start matlab-proxy using the jupyter-matlab-proxy registered endpoint.
             self.murl, self.server_base_url, self.headers = start_matlab_proxy(self.log)
-            self.mwi_comm_helper = MWICommHelper(self.murl, self.headers, self.log)
+            self.mwi_comm_helper = MWICommHelper(
+                kernelid, self.murl, self.headers, self.log
+            )
             loop = asyncio.get_event_loop()
             loop.run_until_complete(
                 self.mwi_comm_helper.connect(
@@ -334,9 +337,7 @@ class MATLABKernel(ipykernel.kernelbase.Kernel):
 
             # Perform execution and categorization of outputs in MATLAB. Blocks
             # until execution results are received from MATLAB.
-            outputs = await self.mwi_comm_helper.send_execution_request_to_matlab(
-                code, self.ident
-            )
+            outputs = await self.mwi_comm_helper.send_execution_request_to_matlab(code)
 
             self.log.debug(
                 "Received outputs after execution in MATLAB. Clearing output area"
@@ -470,7 +471,7 @@ class MATLABKernel(ipykernel.kernelbase.Kernel):
     async def do_shutdown(self, restart):
         self.log.debug("Received shutdown request from Jupyter")
         try:
-            await self.mwi_comm_helper.send_shutdown_request_to_matlab(self.ident)
+            await self.mwi_comm_helper.send_shutdown_request_to_matlab()
             await self.mwi_comm_helper.disconnect()
         except (
             MATLABConnectionError,

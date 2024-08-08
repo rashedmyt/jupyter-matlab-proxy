@@ -20,7 +20,8 @@ from mocks.mock_http_responses import (
 async def matlab_proxy_fixture():
     url = "http://localhost"
     headers = {}
-    matlab_proxy = MWICommHelper(url, headers)
+    kernelid = ""
+    matlab_proxy = MWICommHelper(kernelid, url, headers)
     loop = asyncio.get_event_loop()
     await matlab_proxy.connect(loop, loop)
     yield matlab_proxy
@@ -112,9 +113,8 @@ async def test_execution_request_bad_request(monkeypatch, matlab_proxy_fixture):
     monkeypatch.setattr(aiohttp.ClientSession, "post", mock_post)
 
     code = "placeholder for code"
-    kernelid = ""
     with pytest.raises(aiohttp.client_exceptions.ClientError) as exceptionInfo:
-        await matlab_proxy_fixture.send_execution_request_to_matlab(code, kernelid)
+        await matlab_proxy_fixture.send_execution_request_to_matlab(code)
     assert mock_exception_message in str(exceptionInfo.value)
 
 
@@ -143,9 +143,8 @@ async def test_execution_request_invalid_feval_response(
     monkeypatch.setattr(aiohttp.ClientSession, "post", mock_post)
 
     code = "placeholder for code"
-    kernelid = ""
     with pytest.raises(MATLABConnectionError) as exceptionInfo:
-        await matlab_proxy_fixture.send_execution_request_to_matlab(code, kernelid)
+        await matlab_proxy_fixture.send_execution_request_to_matlab(code)
     assert str(exceptionInfo.value) == str(MATLABConnectionError())
 
 
@@ -184,9 +183,8 @@ async def test_execution_interrupt(monkeypatch, matlab_proxy_fixture):
     monkeypatch.setattr(aiohttp.ClientSession, "post", mock_post)
 
     code = "placeholder for code"
-    kernelid = ""
     with pytest.raises(Exception) as exceptionInfo:
-        await matlab_proxy_fixture.send_execution_request_to_matlab(code, kernelid)
+        await matlab_proxy_fixture.send_execution_request_to_matlab(code)
     assert "Operation may have interrupted by user" in str(exceptionInfo.value)
 
 
@@ -220,11 +218,8 @@ async def test_execution_success(monkeypatch, matlab_proxy_fixture):
     monkeypatch.setattr(aiohttp.ClientSession, "post", mock_post)
 
     code = "placeholder for code"
-    kernelid = ""
     try:
-        outputs = await matlab_proxy_fixture.send_execution_request_to_matlab(
-            code, kernelid
-        )
+        outputs = await matlab_proxy_fixture.send_execution_request_to_matlab(code)
     except Exception:
         pytest.fail("Unexpected failured in execution request")
 

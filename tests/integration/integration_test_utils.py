@@ -90,7 +90,7 @@ async def wait_matlab_proxy_ready(matlab_proxy_url):
     start_time = time.time()
 
     loop = asyncio.get_event_loop()
-    matlab_proxy = MWICommHelper(matlab_proxy_url, {})
+    matlab_proxy = MWICommHelper("", matlab_proxy_url, {})
     await matlab_proxy.connect(loop, loop)
 
     # Poll for matlab-proxy to be up

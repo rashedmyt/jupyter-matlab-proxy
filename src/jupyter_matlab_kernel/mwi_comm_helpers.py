@@ -28,7 +28,8 @@ def check_licensing_status(data):
 
 
 class MWICommHelper:
-    def __init__(self, url, headers=None, logger=_logger) -> None:
+    def __init__(self, kernelid, url, headers=None, logger=_logger) -> None:
+        self.kernelid = kernelid
         self.url = url
         self.headers = headers
         self.logger = logger
@@ -106,13 +107,12 @@ class MWICommHelper:
             self.logger.error("Error occurred during communication with matlab-proxy")
             resp.raise_for_status()
 
-    async def send_execution_request_to_matlab(self, code, kernelid):
+    async def send_execution_request_to_matlab(self, code):
         """
         Evaluate MATLAB code and capture results.
 
         Args:
             code (string): MATLAB code to be evaluated
-            kernelid (string): A unique kernel identifier.
 
         Returns:
             List(dict): list of outputs captured during evaluation.
@@ -122,7 +122,7 @@ class MWICommHelper:
         """
         self.logger.debug("Sending execution request to MATLAB")
         return await self._send_jupyter_request_to_matlab(
-            "execute", [code, kernelid], self._http_shell_client
+            "execute", [code, self.kernelid], self._http_shell_client
         )
 
     async def send_completion_request_to_matlab(self, code, cursor_pos):
@@ -155,21 +155,16 @@ class MWICommHelper:
             "complete", [code, cursor_pos], self._http_shell_client
         )
 
-    async def send_shutdown_request_to_matlab(self, kernelid):
+    async def send_shutdown_request_to_matlab(self):
         """
         Perform cleanup tasks related to kernel shutdown.
-
-        Args:
-            url (string): Url of matlab-proxy server
-            headers (dict): HTTP headers required for communicating with matlab-proxy
-            kernelid (string): A unique kernel identifier.
 
         Raises:
             HTTPError: Occurs when connection to matlab-proxy cannot be established.
         """
         self.logger.debug("Sending shutdown request to MATLAB")
         return await self._send_jupyter_request_to_matlab(
-            "shutdown", [kernelid], self._http_control_client
+            "shutdown", [self.kernelid], self._http_control_client
         )
 
     async def send_interrupt_request_to_matlab(self):
