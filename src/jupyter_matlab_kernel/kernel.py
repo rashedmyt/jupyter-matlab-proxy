@@ -241,6 +241,7 @@ class MATLABKernel(ipykernel.kernelbase.Kernel):
     }
 
     # MATLAB Kernel state
+    kernel_id = ""
     server_base_url = ""
     startup_error = None
     startup_checks_completed: bool = False
@@ -251,14 +252,16 @@ class MATLABKernel(ipykernel.kernelbase.Kernel):
 
         # Update log instance with kernel id. This helps in identifying logs from
         # multiple kernels which are running simultaneously
-        kernel_id = self.ident
-        self.log.debug(f"Initializing kernel with id: {kernel_id}")
-        self.log = self.log.getChild(f"{kernel_id}")
+        self.kernel_id = self.ident
+        self.log.debug(f"Initializing kernel with id: {self.kernel_id}")
+        self.log = self.log.getChild(f"{self.kernel_id}")
 
         try:
             # Start matlab-proxy using the jupyter-matlab-proxy registered endpoint.
             murl, self.server_base_url, headers = start_matlab_proxy(self.log)
-            self.mwi_comm_helper = MWICommHelper(kernel_id, murl, headers, self.log)
+            self.mwi_comm_helper = MWICommHelper(
+                self.kernel_id, murl, headers, self.log
+            )
             loop = asyncio.get_event_loop()
             loop.run_until_complete(
                 self.mwi_comm_helper.connect(
