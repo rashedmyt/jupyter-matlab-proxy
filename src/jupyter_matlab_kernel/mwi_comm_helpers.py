@@ -28,8 +28,8 @@ def check_licensing_status(data):
 
 
 class MWICommHelper:
-    def __init__(self, kernelid, url, headers=None, logger=_logger) -> None:
-        self.kernelid = kernelid
+    def __init__(self, kernel_id, url, headers=None, logger=_logger) -> None:
+        self.kernel_id = kernel_id
         self.url = url
         self.headers = headers
         self.logger = logger
@@ -122,7 +122,7 @@ class MWICommHelper:
         """
         self.logger.debug("Sending execution request to MATLAB")
         return await self._send_jupyter_request_to_matlab(
-            "execute", [code, self.kernelid], self._http_shell_client
+            "execute", [code, self.kernel_id], self._http_shell_client
         )
 
     async def send_completion_request_to_matlab(self, code, cursor_pos):
@@ -164,7 +164,7 @@ class MWICommHelper:
         """
         self.logger.debug("Sending shutdown request to MATLAB")
         return await self._send_jupyter_request_to_matlab(
-            "shutdown", [self.kernelid], self._http_control_client
+            "shutdown", [self.kernel_id], self._http_control_client
         )
 
     async def send_interrupt_request_to_matlab(self):

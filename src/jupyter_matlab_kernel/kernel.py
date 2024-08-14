@@ -251,14 +251,14 @@ class MATLABKernel(ipykernel.kernelbase.Kernel):
 
         # Update log instance with kernel id. This helps in identifying logs from
         # multiple kernels which are running simultaneously
-        kernelid = self.ident
-        self.log.debug(f"Initializing kernel with id: {kernelid}")
-        self.log = self.log.getChild(f"{kernelid}")
+        kernel_id = self.ident
+        self.log.debug(f"Initializing kernel with id: {kernel_id}")
+        self.log = self.log.getChild(f"{kernel_id}")
 
         try:
             # Start matlab-proxy using the jupyter-matlab-proxy registered endpoint.
             murl, self.server_base_url, headers = start_matlab_proxy(self.log)
-            self.mwi_comm_helper = MWICommHelper(kernelid, murl, headers, self.log)
+            self.mwi_comm_helper = MWICommHelper(kernel_id, murl, headers, self.log)
             loop = asyncio.get_event_loop()
             loop.run_until_complete(
                 self.mwi_comm_helper.connect(
@@ -354,11 +354,11 @@ class MATLABKernel(ipykernel.kernelbase.Kernel):
                 f"Exception occurred while processing execution request:\n{e}"
             )
             if isinstance(e, aiohttp.client_exceptions.ClientError):
-                # Log the HTTPError for debugging
+                # Log the ClientError for debugging
                 self.log.error(e)
 
-                # If exception is an HTTPError, it means MATLAB is unavailable.
-                # Replace the HTTPError with MATLABConnectionError to give
+                # If exception is an ClientError, it means MATLAB is unavailable.
+                # Replace the ClientError with MATLABConnectionError to give
                 # meaningful error message to the user
                 e = MATLABConnectionError()
 
@@ -484,7 +484,7 @@ class MATLABKernel(ipykernel.kernelbase.Kernel):
         login window if matlab is not licensed using matlab-proxy.
 
         Raises:
-            HTTPError, MATLABConnectionError: Occurs when matlab-proxy is not started or kernel cannot
+            ClientError, MATLABConnectionError: Occurs when matlab-proxy is not started or kernel cannot
                                               communicate with MATLAB.
         """
         self.log.debug("Performing startup checks")

@@ -20,8 +20,8 @@ from mocks.mock_http_responses import (
 async def matlab_proxy_fixture():
     url = "http://localhost"
     headers = {}
-    kernelid = ""
-    matlab_proxy = MWICommHelper(kernelid, url, headers)
+    kernel_id = ""
+    matlab_proxy = MWICommHelper(kernel_id, url, headers)
     loop = asyncio.get_event_loop()
     await matlab_proxy.connect(loop, loop)
     yield matlab_proxy
