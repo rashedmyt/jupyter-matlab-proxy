@@ -241,12 +241,7 @@ class MATLABKernel(ipykernel.kernelbase.Kernel):
     }
 
     # MATLAB Kernel state
-    murl = ""
-    is_matlab_licensed: bool = False
-    matlab_status = ""
-    matlab_proxy_has_error: bool = False
     server_base_url = ""
-    headers = dict()
     startup_error = None
     startup_checks_completed: bool = False
 
@@ -262,10 +257,8 @@ class MATLABKernel(ipykernel.kernelbase.Kernel):
 
         try:
             # Start matlab-proxy using the jupyter-matlab-proxy registered endpoint.
-            self.murl, self.server_base_url, self.headers = start_matlab_proxy(self.log)
-            self.mwi_comm_helper = MWICommHelper(
-                kernelid, self.murl, self.headers, self.log
-            )
+            murl, self.server_base_url, headers = start_matlab_proxy(self.log)
+            self.mwi_comm_helper = MWICommHelper(kernelid, murl, headers, self.log)
             loop = asyncio.get_event_loop()
             loop.run_until_complete(
                 self.mwi_comm_helper.connect(
@@ -501,9 +494,9 @@ class MATLABKernel(ipykernel.kernelbase.Kernel):
             raise self.startup_error
 
         (
-            self.is_matlab_licensed,
-            self.matlab_status,
-            self.matlab_proxy_has_error,
+            is_matlab_licensed,
+            matlab_status,
+            matlab_proxy_has_error,
         ) = await self.mwi_comm_helper.fetch_matlab_proxy_status()
 
         # Display iframe containing matlab-proxy to show login window if MATLAB
@@ -516,7 +509,7 @@ class MATLABKernel(ipykernel.kernelbase.Kernel):
         # as other browser based Jupyter clients.
         #
         # TODO: Find a workaround for users to be able to use our Jupyter kernel in VS Code.
-        if not self.is_matlab_licensed:
+        if not is_matlab_licensed:
             self.log.debug(
                 "MATLAB is not licensed. Displaying HTML output to enable licensing."
             )
@@ -536,11 +529,11 @@ class MATLABKernel(ipykernel.kernelbase.Kernel):
         self.log.debug("Waiting until MATLAB is started")
         timeout = 0
         while (
-            self.matlab_status != "up"
+            matlab_status != "up"
             and timeout != _MATLAB_STARTUP_TIMEOUT
-            and not self.matlab_proxy_has_error
+            and not matlab_proxy_has_error
         ):
-            if self.is_matlab_licensed:
+            if is_matlab_licensed:
                 if timeout == 0:
                     self.log.debug("Licensing completed. Clearing output area")
                     self.display_output(
@@ -558,9 +551,9 @@ class MATLABKernel(ipykernel.kernelbase.Kernel):
                 timeout += 1
             time.sleep(1)
             (
-                self.is_matlab_licensed,
-                self.matlab_status,
-                self.matlab_proxy_has_error,
+                is_matlab_licensed,
+                matlab_status,
+                matlab_proxy_has_error,
             ) = await self.mwi_comm_helper.fetch_matlab_proxy_status()
 
         # If MATLAB is not available after 15 seconds of licensing information
@@ -572,7 +565,7 @@ class MATLABKernel(ipykernel.kernelbase.Kernel):
             )
             raise MATLABConnectionError
 
-        if self.matlab_proxy_has_error:
+        if matlab_proxy_has_error:
             self.log.error("matlab-proxy encountered error.")
             raise MATLABConnectionError
 
