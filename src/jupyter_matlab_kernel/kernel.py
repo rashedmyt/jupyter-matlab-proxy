@@ -496,7 +496,7 @@ class MATLABKernel(ipykernel.kernelbase.Kernel):
                 aiohttp.client_exceptions.ClientResponseError,
             ) as e:
                 self.log.error(
-                    f"Exception occurred while sending shutdown request to MATLAB:\n{e}"
+                    f"Exception occurred while sending completion request to MATLAB:\n{e}"
                 )
 
             self.log.debug(
