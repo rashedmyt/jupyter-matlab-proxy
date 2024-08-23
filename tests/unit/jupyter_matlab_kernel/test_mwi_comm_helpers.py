@@ -7,13 +7,14 @@ import http
 import aiohttp
 import aiohttp.client_exceptions
 import pytest
-from jupyter_matlab_kernel.mwi_comm_helpers import MWICommHelper
-from jupyter_matlab_kernel.mwi_exceptions import MATLABConnectionError
 from mocks.mock_http_responses import (
     MockMatlabProxyStatusResponse,
     MockSimpleBadResponse,
     MockUnauthorisedRequestResponse,
 )
+
+from jupyter_matlab_kernel.mwi_comm_helpers import MWICommHelper
+from jupyter_matlab_kernel.mwi_exceptions import MATLABConnectionError
 
 
 @pytest.fixture
@@ -21,9 +22,9 @@ async def matlab_proxy_fixture():
     url = "http://localhost"
     headers = {}
     kernel_id = ""
-    matlab_proxy = MWICommHelper(kernel_id, url, headers)
     loop = asyncio.get_event_loop()
-    await matlab_proxy.connect(loop, loop)
+    matlab_proxy = MWICommHelper(kernel_id, url, loop, loop, headers)
+    await matlab_proxy.connect()
     yield matlab_proxy
     await matlab_proxy.disconnect()
 

@@ -266,15 +266,16 @@ class MATLABKernel(ipykernel.kernelbase.Kernel):
         try:
             # Start matlab-proxy using the jupyter-matlab-proxy registered endpoint.
             murl, self.server_base_url, headers = start_matlab_proxy(self.log)
+
+            # Using asyncio.get_event_loop for shell_loop as io_loop variable is
+            # not yet initialized because start() is called after the __init__
+            # is completed.
+            shell_loop = asyncio.get_event_loop()
+            control_loop = self.control_thread.io_loop.asyncio_loop
             self.mwi_comm_helper = MWICommHelper(
-                self.kernel_id, murl, headers, self.log
+                self.kernel_id, murl, shell_loop, control_loop, headers, self.log
             )
-            loop = asyncio.get_event_loop()
-            loop.run_until_complete(
-                self.mwi_comm_helper.connect(
-                    loop, self.control_thread.io_loop.asyncio_loop
-                )
-            )
+            shell_loop.run_until_complete(self.mwi_comm_helper.connect())
         except MATLABConnectionError as err:
             self.startup_error = err
 

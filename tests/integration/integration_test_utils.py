@@ -40,6 +40,7 @@ def matlab_proxy_cmd_for_testing():
     """
 
     import matlab_proxy
+
     from jupyter_matlab_proxy.jupyter_config import config
 
     matlab_cmd = [
@@ -90,8 +91,8 @@ async def wait_matlab_proxy_ready(matlab_proxy_url):
     start_time = time.time()
 
     loop = asyncio.get_event_loop()
-    matlab_proxy = MWICommHelper("", matlab_proxy_url, {})
-    await matlab_proxy.connect(loop, loop)
+    matlab_proxy = MWICommHelper("", matlab_proxy_url, loop, loop, {})
+    await matlab_proxy.connect()
 
     # Poll for matlab-proxy to be up
     while matlab_status in ["down", "starting"] and (

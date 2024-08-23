@@ -28,9 +28,23 @@ def check_licensing_status(data):
 
 
 class MWICommHelper:
-    def __init__(self, kernel_id, url, headers=None, logger=_logger) -> None:
+    def __init__(
+        self, kernel_id, url, shell_loop, control_loop, headers=None, logger=_logger
+    ) -> None:
+        """_summary_
+
+        Args:
+            kernel_id (str): Unique identifier corresponding to the Jupyter kernel instance.
+            url (str): URL of the matlab-proxy server.
+            shell_loop : event loop corresponding to the Shell channel in Jupyter Messaging Protocol
+            control_loop : event loop corresponding to the Control channel in Jupyter Messaging Protocol
+            headers (dict, optional): Headers containing auth information for communication with matlab-proxy server. Defaults to None.
+            logger (Logger, optional): Instance of Logger. Defaults to _logger.
+        """
         self.kernel_id = kernel_id
         self.url = url
+        self._shell_loop = shell_loop
+        self._control_loop = control_loop
         self.headers = headers
         self.logger = logger
         self._http_shell_client = None
@@ -58,18 +72,15 @@ class MWICommHelper:
             timeout=timeout,
         )
 
-    async def connect(self, shell_loop, control_loop):
-        """Initializes the HTTP clients with the given event loops
-
-        Args:
-            shell_loop : event loop corresponding to the Shell channel in Jupyter Messaging Protocol
-            control_loop : event loop corresponding to the Control channel in Jupyter Messaging Protocol
-        """
+    async def connect(self):
+        """Initializes the HTTP clients"""
         if self._http_shell_client is None:
-            self._http_shell_client = await self._create_http_session(shell_loop)
+            self._http_shell_client = await self._create_http_session(self._shell_loop)
 
         if self._http_control_client is None:
-            self._http_control_client = await self._create_http_session(control_loop)
+            self._http_control_client = await self._create_http_session(
+                self._control_loop
+            )
 
     async def disconnect(self):
         if self._http_shell_client:
