@@ -1,28 +1,27 @@
 {
   "name": "Open MATLAB in browser",
   // See https://hub.docker.com/r/mathworks/matlab/tags for available images.
-  "image": "mathworks/matlab:latest",
+  "image": "ghcr.io/mathworks-ref-arch/matlab-integration-for-jupyter/jupyter-matlab-notebook:r2024a",
   "hostRequirements": {
     "cpus": 4
   },
-  "portsAttributes": {
-    "8888": {
-      "label": "MATLAB",
-      "onAutoForward": "openBrowser"
-    }
-  },
-  "waitFor": "updateContentCommand",
+  // "portsAttributes": {
+  //   "8888": {
+  //     "label": "MATLAB",
+  //     "onAutoForward": "openBrowser"
+  //   }
+  // },
+  // "waitFor": "updateContentCommand",
   "onCreateCommand": {
     // Installing GIT to support codespaces & devcontainer workflows
     "install-dependencies": "sudo apt-get update && sudo apt-get install --no-install-recommends -y git python3 python3-pip xvfb"
   },
-  "updateContentCommand": "echo Codespace built",
   //"updateContentCommand": "sudo python3 -m pip install --upgrade jupyter-matlab-proxy matlab-proxy jupyterlab",
-  "postStartCommand": "env MWI_APP_PORT=8888 MWI_ENABLE_TOKEN_AUTH=False run.sh -browser",
-  "containerEnv": {
-    "MATLAB_USERWORKDIR": "${containerWorkspaceFolder}",
-    "MATLAB_USE_USERWORK": "1"
-  },
+  // "postStartCommand": "env MWI_APP_PORT=8888 MWI_ENABLE_TOKEN_AUTH=False run.sh -browser",
+  // "containerEnv": {
+  //   "MATLAB_USERWORKDIR": "${containerWorkspaceFolder}",
+  //   "MATLAB_USE_USERWORK": "1"
+  // },
   // For releases older than R2022a use the following instead:
   // "postStartCommand": "env MWI_APP_PORT=8888 MWI_ENABLE_TOKEN_AUTH=False matlab-proxy-app"
   "customizations": {
