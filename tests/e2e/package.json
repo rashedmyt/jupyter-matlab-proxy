@@ -8,7 +8,7 @@
     "test": "npm run lint && npx playwright test",
     "report": "npx playwright show-report",
     "start": "npm run start-jlab && npm run print-jlab-url",
-    "stop":"npm run stop-jlab",
+    "stop": "npm run stop-jlab",
     "start-jlab": "nohup python3 -m jupyter lab --config ./jupyter_server_test_config.py > ./jupyterlab.log 2>&1 & echo $! > ./jlab.pid",
     "stop-jlab": "kill $(cat ./jlab.pid) && rm -rf ./jlab.pid",
     "print-jlab-url": "echo \"JupyterLab URLs:\"; sleep 2; grep -oP 'ServerApp]\\s*http[s]?://[^ ]+' ./jupyterlab.log || echo \"Error: No JupyterLab url found, please check log file ./jupyterlab.log\""

@@ -1,4 +1,4 @@
-// Copyright 2023-2024 The MathWorks, Inc.
+// Copyright 2023-2026 The MathWorks, Inc.
 
 import { devices } from '@playwright/test';
 import dotenv from 'dotenv';
@@ -55,7 +55,7 @@ const config = {
         headless: true,
         ignoreHTTPSErrors: true,
         actionTimeout: 0, // No limit
-        trace: 'on-first-retry',
+        trace: 'retain-on-failure',
 
         screenshot: 'only-on-failure',
         video: 'retain-on-failure',

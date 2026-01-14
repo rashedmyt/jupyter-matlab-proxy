@@ -1,4 +1,4 @@
-// Copyright 2023-2025 The MathWorks, Inc.
+// Copyright 2023-2026 The MathWorks, Inc.
 
 import { expect, test } from '@jupyterlab/galata';
 

@@ -1,4 +1,4 @@
-# Copyright 2023-2024 The MathWorks, Inc.
+# Copyright 2023-2026 The MathWorks, Inc.
 # Integration tests with real MATLAB in the loop
 
 import os
@@ -117,6 +117,7 @@ class MATLABKernelTests(jupyter_kernel_test.KernelTests):
         self.assertIn("%%file", output_text)
         self.assertIn("%%time", output_text)
         self.assertIn("%%help", output_text)
+        self.assertIn("%%matlab", output_text)
 
     # ---- Utility Functions ----
     def _run_code(self, code):
