@@ -6,14 +6,16 @@
 function result = complete(code, cursorPosition)
 % COMPLETE A helper function to provide tab completion results
 
-% Copyright 2023-2024 The MathWorks, Inc.
+% Copyright 2023-2026 The MathWorks, Inc.
 
 % Get tab completion data for matlab code. Using evalin('base',..) so that the
 % function workspace does not affect the results.
 completionCmd = ['builtin(''_programmingAidsTest'','''',' mat2str(code) ',' mat2str(cursorPosition) ', [])'];
 completionData = jsondecode(evalin('base', completionCmd));
 
-[result.matches, result.completions] = getCompletions(completionData, cursorPosition);
+startPosition = getStartPosition(code, cursorPosition);
+
+[result.matches, result.completions] = getCompletions(completionData, cursorPosition, startPosition);
 
 if isfield(completionData, "signatures")
     signatures = completionData.signatures;
@@ -30,7 +32,7 @@ if isfield(completionData, "signatures")
         end
 
         for idx2 = 1:length(inputArguments)
-            [matches, completions] = getCompletions(inputArguments{idx2}, cursorPosition);
+            [matches, completions] = getCompletions(inputArguments{idx2}, cursorPosition, startPosition);
 
             % Append matches and completions to the original output.
             result.matches = [result.matches matches];
@@ -49,19 +51,13 @@ end
 
 % Helper function to extract the necessary completion information from the
 % provided completion data.
-function [matches, completions] = getCompletions(completionData, cursorPosition)
+function [matches, completions] = getCompletions(completionData, cursorPosition, startPosition)
 matches = cell(0);
 completions = cell(0);
 
 if isfield(completionData, "widgetData")
     if isfield(completionData.widgetData, "choices")
         choices = completionData.widgetData.choices;
-
-        if isfield(completionData, "value")
-            valueLength = length(completionData.value);
-        else
-            valueLength = 0;
-        end
 
         is_choices_struct = isstruct(choices);
 
@@ -78,7 +74,7 @@ if isfield(completionData, "widgetData")
                 matches{end+1} = choice.completion;
                 completion.text = choice.completion;
                 completion.type = getCompletionType(choice.matchType);
-                completion.start = cursorPosition - valueLength;
+                completion.start = startPosition;
                 completion.end = cursorPosition;
                 completions{end+1} = completion;
             end
@@ -120,3 +116,16 @@ elseif strcmp(inputType, "variable")
 else
     type = "function";
 end
+
+% Helper function to get the start position of the cursor in the code from which to start the completion
+function startPosition = getStartPosition(code, cursorPosition)
+currentPosition = cursorPosition;
+while currentPosition > 0
+    % Stop on any character that is not a word character (letter, digit, or underscore).
+    % This ensures operators like '=' do not get included in the replaced range.
+    if isempty(regexp(code(currentPosition), '^\w$', 'once'))
+        break;
+    end
+    currentPosition = currentPosition - 1;
+end
+startPosition = currentPosition;
