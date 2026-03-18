@@ -49,8 +49,7 @@
     "test:lezer": "cd src/lezer-matlab && npm test",
     "watch": "run-p watch:src watch:labextension",
     "watch:src": "tsc -w",
-    "watch:labextension": "jupyter labextension watch .",
-    "audit:fix": "npx yarn-audit-fix"
+    "watch:labextension": "jupyter labextension watch ."
   },
   "dependencies": {
     "@codemirror/language": "^6.0.0",
@@ -87,8 +86,7 @@
     "semver": ">=5.7.2",
     "ts-jest": "^29.2.5",
     "typescript": "~5.0.2",
-    "ws": "^7.5.10",
-    "yarn-audit-fix": "^10.1.1"
+    "ws": "^7.5.10"
   },
   "sideEffects": [
     "style/*.css",
