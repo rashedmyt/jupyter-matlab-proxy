@@ -1,4 +1,4 @@
-# Copyright 2023-2025 The MathWorks, Inc.
+# Copyright 2023-2026 The MathWorks, Inc.
 
 [build-system]
 requires = ["hatchling>=1.5.0", "jupyterlab>=4.0.0,<5", "hatch-nodejs-version>=0.3.2"]
@@ -43,7 +43,7 @@ dependencies = [
     "ipykernel>=6.0.3",
     "jupyter-client",
     "jupyter-server-proxy>=4.1.0",
-    "matlab-proxy>=0.30.0",
+    "matlab-proxy>=0.31.0",
     "psutil",
     "requests",
 ]
