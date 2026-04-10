@@ -1,4 +1,4 @@
-# Copyright 2023-2025 The MathWorks, Inc.
+# Copyright 2023-2026 The MathWorks, Inc.
 
 """
 This module serves as the base class for various MATLAB Kernels.
@@ -29,7 +29,6 @@ from jupyter_matlab_kernel.mwi_comm_helpers import MWICommHelper
 from jupyter_matlab_kernel.mwi_exceptions import MATLABConnectionError
 
 from jupyter_matlab_kernel.comms import LabExtensionCommunication
-
 
 _MATLAB_STARTUP_TIMEOUT = mwi_settings.get_process_startup_timeout()
 
@@ -597,16 +596,14 @@ class BaseMATLABKernel(ipykernel.kernelbase.Kernel):
                 self.log.debug(
                     "MATLAB is not licensed and is in a non-jupyter environment. licensing via other means required."
                 )
-                raise MATLABConnectionError(
-                    """
+                raise MATLABConnectionError("""
                     Error: Cannot start MATLAB as no licensing information was found. 
                     Resolution: Set the environment variable MLM_LICENSE_FILE to provide a network license manager, 
                     or set MWI_USE_EXISTING_LICENSE to True if the installed MATLAB is already licensed. 
                     See https://github.com/mathworks/matlab-proxy/blob/main/Advanced-Usage.md for more information.
                     To use Online licensing, start a MATLAB Kernel in a Jupyter notebook and login using the web interface 
                     shown upon execution of any code.
-                    """
-                )
+                    """)
             self.log.debug(
                 "MATLAB is not licensed. Displaying HTML output to enable licensing."
             )

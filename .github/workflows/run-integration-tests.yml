@@ -1,4 +1,4 @@
-# Copyright 2023-2025 The MathWorks, Inc.
+# Copyright 2023-2026 The MathWorks, Inc.
 
 name: Integration testing MATLAB Integration for Jupyter
 
@@ -53,7 +53,7 @@ jobs:
           TEST_USERNAME: ${{ secrets.TEST_USERNAME }}
           TEST_PASSWORD: ${{ secrets.TEST_PASSWORD }}
         run: |
-          python3 -c "from tests.integration.utils import licensing; licensing.start_and_license_matlab_proxy_using_jsp()"
+          python3 -c "from tests.integration.utils import licensing; licensing.license_matlab_proxy_mpm()"
 
       - name: Integration test with pytest
         env:

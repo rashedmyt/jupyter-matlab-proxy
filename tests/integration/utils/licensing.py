@@ -1,4 +1,4 @@
-# Copyright 2023-2024 The MathWorks, Inc.
+# Copyright 2023-2026 The MathWorks, Inc.
 
 import asyncio
 import os
@@ -6,8 +6,6 @@ from tests.integration.utils import integration_test_utils as utils
 import requests
 import matlab_proxy_manager.lib.api as mpm_lib
 from matlab_proxy import settings as mwi_settings
-
-_MATLAB_STARTUP_TIMEOUT = mwi_settings.get_process_startup_timeout()
 
 
 def start_matlab_proxy_sync(parent_id, caller_id, isolated_matlab=False):
@@ -37,87 +35,10 @@ def shutdown_matlab_proxy_sync(parent_id, caller_id, mpm_auth_token):
     loop.run_until_complete(mpm_lib.shutdown(parent_id, caller_id, mpm_auth_token))
 
 
-def start_and_license_matlab_proxy_using_jsp():
-    try:
-        import matlab_proxy.util
-
-        utils.perform_basic_checks()
-
-        # Select a random free port to serve matlab-proxy for testing
-        mwi_app_port = utils.get_random_free_port()
-        mwi_base_url = "/matlab-test"
-
-        # '127.0.0.1' is used instead 'localhost' for testing since Windows machines consume
-        # some time to resolve 'localhost' hostname
-        matlab_proxy_url = f"http://127.0.0.1:{mwi_app_port}{mwi_base_url}"
-
-        # Set the log path based on the test's execution environment
-        log_path = "tests/integration/integ_logs.log"
-        base_path = os.environ.get(
-            "GITHUB_WORKSPACE", os.path.dirname(os.path.abspath(__name__))
-        )
-        matlab_proxy_logs_path = os.path.join(base_path, log_path)
-
-        # Start matlab-proxy-app for testing
-        input_env = {
-            # MWI_JUPYTER_TEST env variable is used in jupyter_matlab_kernel/kernel.py
-            # to bypass jupyter server for testing
-            "MWI_JUPYTER_TEST": "true",
-            "MWI_APP_PORT": mwi_app_port,
-            "MWI_BASE_URL": mwi_base_url,
-            "MWI_LOG_FILE": str(matlab_proxy_logs_path),
-            "MWI_ENABLE_TOKEN_AUTH": "false",
-        }
-
-        # Get event loop to start matlab-proxy in background
-        loop = matlab_proxy.util.get_event_loop()
-
-        # Run matlab-proxy in the background in an event loop
-        proc = loop.run_until_complete(
-            utils.start_matlab_proxy_app(input_env=input_env)
-        )
-        # Poll for matlab-proxy URL to respond
-        utils.poll_web_service(
-            matlab_proxy_url,
-            step=5,
-            timeout=_MATLAB_STARTUP_TIMEOUT,
-            ignore_exceptions=(
-                requests.exceptions.ConnectionError,
-                requests.exceptions.SSLError,
-            ),
-        )
-        # License matlab-proxy using playwright UI automation
-        utils.license_matlab_proxy(matlab_proxy_url)
-
-        # Wait for matlab-proxy to be up and running
-        loop.run_until_complete(utils.wait_matlab_proxy_ready(matlab_proxy_url))
-
-    except Exception as e:
-        print(f"An error occurred: {e}")
-    finally:
-        try:
-            shutdown_matlab_proxy_jsp(matlab_proxy_url, proc)
-
-        except Exception as e:
-            print(f"Failed to shut down matlab-proxy: {e}")
-
-
-def shutdown_matlab_proxy_jsp(url, proc):
-    # Request timeouts
-    timeout = 120  # seconds
-    # Send shutdown_integration request to MATLAB Proxy
-    shutdown_url = f"{url}/shutdown_integration"
-    try:
-        requests.delete(shutdown_url, timeout=timeout)
-    except requests.exceptions.Timeout:
-        print("Timed out waiting for matlab-proxy to shutdown, killing process.")
-        proc.kill()
-
-
 def license_matlab_proxy_mpm():
     import time
 
-    """
+    """ 
     Pytest fixture for managing a standalone matlab-proxy process
     for testing purposes. This fixture sets up a matlab-proxy process in
     the module scope, and tears it down after all the tests are executed.

@@ -1,4 +1,4 @@
-# Copyright 2023-2025 The MathWorks, Inc.
+# Copyright 2023-2026 The MathWorks, Inc.
 # Utility functions for integration testing of jupyter-matlab-proxy
 
 import asyncio
@@ -28,49 +28,6 @@ def perform_basic_checks():
     assert (
         matlab_proxy.settings.get_matlab_version(matlab_path) >= "R2020b"
     ), "MATLAB version should be R2020b or later"
-
-
-def matlab_proxy_cmd_for_testing():
-    """
-    Get command for starting matlab-proxy process
-
-    Returns:
-        list(string): Command for starting matlab-proxy process
-    """
-
-    import matlab_proxy
-
-    from jupyter_matlab_proxy.jupyter_config import config
-
-    matlab_cmd = [
-        matlab_proxy.get_executable_name(),
-        "--config",
-        config["extension_name"],
-    ]
-    return matlab_cmd
-
-
-async def start_matlab_proxy_app(input_env={}):
-    """
-    Starts matlab-proxy as a subprocess. The subprocess runs forever unless
-    there is any error
-
-    Args:
-        input_env (dict, optional): Environment variables to be
-        initialized for the subprocess. Defaults to {}.
-
-    Returns:
-        Process: subprocess object
-    """
-
-    cmd = matlab_proxy_cmd_for_testing()
-    matlab_proxy_env = os.environ.copy()
-    matlab_proxy_env.update(input_env)
-    proc = await asyncio.create_subprocess_exec(
-        *cmd,
-        env=matlab_proxy_env,
-    )
-    return proc
 
 
 async def wait_matlab_proxy_ready(matlab_proxy_url):
@@ -110,21 +67,6 @@ async def wait_matlab_proxy_ready(matlab_proxy_url):
         matlab_proxy_status.matlab_status == "up"
     ), f"matlab-proxy process did not start successfully\nMATLAB Status is '{matlab_proxy_status.matlab_status}'"
     await comm_helper.disconnect()
-
-
-def get_random_free_port() -> str:
-    """
-    Get a random free port
-
-    Returns:
-        string: A random free port
-    """
-
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.bind(("", 0))
-    port = str(s.getsockname()[1])
-    s.close()
-    return port
 
 
 def license_matlab_proxy(matlab_proxy_url):
@@ -238,38 +180,3 @@ def unlicense_matlab_proxy(matlab_proxy_url):
     # If the above code threw error even after maximum retries, then raise error
     if error:
         raise error
-
-
-def poll_web_service(url, step=1, timeout=60, ignore_exceptions=None):
-    """Poll a web service for a 200 response
-
-    Args:
-        url (string): URL of the web service
-        step (int, optional): Poll Interval. Defaults to 1 second.
-        timeout (int, optional): Polling timout. Defaults to 60 seconds.
-        ignore_exceptions (tuple, optional): The exceptions that need to be ignored
-        within the polling timout. Defaults to None.
-
-    Raises:
-        TimeoutError: Error if polling timeout is exceeded
-
-    Returns:
-        dict: response dictionary object
-    """
-    start_time = time.time()
-    end_time = start_time + timeout
-
-    while time.time() < end_time:
-        try:
-            response = requests.get(url, verify=False)
-            if response.status_code == 200:
-                return response
-
-        except Exception as e:
-            if ignore_exceptions and isinstance(e, ignore_exceptions):
-                continue  # Ignore specified exceptions
-        time.sleep(step)
-
-    raise TimeoutError(
-        f"{url} did not return a 200 response within the timeout period {timeout} seconds."
-    )
